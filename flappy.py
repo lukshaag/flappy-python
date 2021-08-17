@@ -17,4 +17,3 @@ IMG_BIRD = [
 pg.font.init()
 SCORE_FONT = pg.font.SysFont('Arial', 50)
 
-
