@@ -187,7 +187,8 @@ def main():
     running = True
     while running:
         timer.tick(30)
-        
+
+        #user interact
         for event in pg.event.get():
             if event.type == pg.QUIT:
                 running = False
@@ -197,8 +198,10 @@ def main():
                 if event.key == pg.K_SPACE:
                     for bird in birds:
                         bird.jump()
-        
-        
+        #move bird and base
+        for bird in birds:
+            bird.move()
+        base.move()
 
         draw_screen(screen, birds, pipes, base, score)
 
