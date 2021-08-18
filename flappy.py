@@ -1,6 +1,11 @@
 import pygame
 import os
 import random
+import neat
+
+
+ai_playing = True
+generation = 0
 
 #WINDOW AND ASSETS CONFIG
 SCREEN_HEIGHT = 800
@@ -167,6 +172,11 @@ def screen_draw(screen, birds, pipes, base, score):
 
     text = SCORE_FONT.render(f'SCORE: {score}', 1, (255, 255, 255))
     screen.blit(text, (SCREEN_WIDTH - 10 - text.get_width(), 10))
+
+    if ai_playing:
+        text = SCORE_FONT.render(f'GEN: {generation}', 1, (255, 255, 255))
+        screen.blit(text, (10, 10))
+
     base.draw(screen)
     pygame.display.update()
 
