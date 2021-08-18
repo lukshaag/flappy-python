@@ -1,28 +1,22 @@
-import pygame as pg
+import pygame
 import os
 import random
-
-from pygame import display
-from pygame import event
-from pygame.constants import KEYDOWN, K_SPACE, QUIT
-from pygame.time import Clock
-
 
 #WINDOW AND ASSETS CONFIG
 SCREEN_HEIGHT = 800
 SCREEN_WIDTH = 500
 
-IMG_PIPE = pg.transform.scale2x(pg.image.load(os.path.join('imgs','pipe.png')))
-IMG_BASE = pg.transform.scale2x(pg.image.load(os.path.join('imgs','base.png')))
-IMG_BG = pg.transform.scale2x(pg.image.load(os.path.join('imgs','bg.png')))
+IMG_PIPE = pygame.transform.scale2x(pygame.image.load(r'D:\CURSOS\PYTHON\PYTHON GAMES\FLAPPY BIRD\imgs\pipe.png'))
+IMG_BASE = pygame.transform.scale2x(pygame.image.load(r'D:\CURSOS\PYTHON\PYTHON GAMES\FLAPPY BIRD\imgs\base.png'))
+IMG_BG = pygame.transform.scale2x(pygame.image.load(r'D:\CURSOS\PYTHON\PYTHON GAMES\FLAPPY BIRD\imgs\bg.png'))
 IMG_BIRD = [
-    pg.transform.scale2x(pg.image.load(os.path.join('imgs','bird1.png'))),
-    pg.transform.scale2x(pg.image.load(os.path.join('imgs','bird2.png'))),
-    pg.transform.scale2x(pg.image.load(os.path.join('imgs','bird3.png')))
+    pygame.transform.scale2x(pygame.image.load(r'D:\CURSOS\PYTHON\PYTHON GAMES\FLAPPY BIRD\imgs\bird1.png')),
+    pygame.transform.scale2x(pygame.image.load(r'D:\CURSOS\PYTHON\PYTHON GAMES\FLAPPY BIRD\imgs\bird2.png')),
+    pygame.transform.scale2x(pygame.image.load(r'D:\CURSOS\PYTHON\PYTHON GAMES\FLAPPY BIRD\imgs\bird3.png'))
 ]
 
-pg.font.init()
-SCORE_FONT = pg.font.SysFont('Arial', 50)
+pygame.font.init()
+SCORE_FONT = pygame.font.SysFont('Arial', 50)
 
 #GAME LOGIC
 class Bird:
@@ -90,13 +84,13 @@ class Bird:
             self.img_count = self.ANIMATION_TIME*2
 
         #draw img
-        img_rotated = pg.transform.rotate(self.img, self.angle)
+        img_rotated = pygame.transform.rotate(self.img, self.angle)
         pos_img_center = self.img.get_rect(topleft=(self.x, self.y)).center
         rect = img_rotated.get_rect(center=pos_img_center)
         screen.blit(img_rotated, rect.topleft)
 
     def get_mask(self):
-        pg.mask.from_surface(self.img)
+        return pygame.mask.from_surface(self.img)
 
     
 class Pipe:
@@ -108,7 +102,7 @@ class Pipe:
         self.height = 0
         self.posTOP = 0
         self.posBASE = 0
-        self.PIPE_TOP = pg.transform.flip(IMG_PIPE, False, True)
+        self.PIPE_TOP = pygame.transform.flip(IMG_PIPE, False, True)
         self.PIPE_BASE = IMG_PIPE
         self.passed = False
         self.set_height()
@@ -127,11 +121,11 @@ class Pipe:
     
     def collide(self, bird):
         bird_mask = bird.get_mask()
-        top_mask = pg.mask.from_surface(self.PIPE_TOP)
-        base_mask = pg.mask.from_surface(self.PIPE_BASE)
+        top_mask = pygame.mask.from_surface(self.PIPE_TOP)
+        base_mask = pygame.mask.from_surface(self.PIPE_BASE)
 
-        distance_top = (self.x - bird.x, round(self.posTOP) - round(bird.y)
-        distance_base = (self.x - bird.x, round(self.posBASE) - round(bird.y)
+        distance_top = (self.x - bird.x, round(self.posTOP) - round(bird.y))
+        distance_base = (self.x - bird.x, round(self.posBASE) - round(bird.y))
 
         point_top = bird_mask.overlap(top_mask, distance_base)
         point_base = bird_mask.overlap(base_mask, distance_base)
@@ -144,7 +138,7 @@ class Pipe:
 
 class Base:
     SPEED = 5
-    WIDHT = IMG_BASE.get_width()
+    WIDTH = IMG_BASE.get_width()
     IMG = IMG_BASE
 
     def __init__(self, y):
@@ -156,9 +150,9 @@ class Base:
         self.x1 -= self.SPEED
         self.x2 -= self.SPEED
         if self.x1 + self.WIDTH < 0:
-            self.x1 = self.x1 + self.WIDTH
+            self.x1 = self.x2 + self.WIDTH
         if self.x2 + self.WIDTH <0:
-            self.x2 = self.x2 + self.WIDTH
+            self.x2 = self.x1  + self.WIDTH
 
     def draw(self, screen):
         screen.blit(self.IMG, (self.x1, self.y))
@@ -171,31 +165,31 @@ def screen_draw(screen, birds, pipes, base, score):
     for pipe in pipes:
         pipe.draw(screen)
 
-    text = SCORE_FONT.render(f"SCORE: {score}", 1, (255, 255, 255))
+    text = SCORE_FONT.render(f'SCORE: {score}', 1, (255, 255, 255))
     screen.blit(text, (SCREEN_WIDTH - 10 - text.get_width(), 10))
     base.draw(screen)
-    pg.display.update()
+    pygame.display.update()
 
 def main():
     birds = [Bird(230, 350)]
     base = Base(730)
     pipes = [Pipe(700)]
-    screen = pg.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+    screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
     score = 0
-    timer = pg.time.Clock()
+    timer = pygame.time.Clock()
 
     running = True
     while running:
         timer.tick(30)
 
         #user interact
-        for event in pg.event.get():
-            if event.type == pg.QUIT:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
                 running = False
-                pg.quit()
+                pygame.quit()
                 quit()
-            if event.type == pg.KEYDOWN:
-                if event.key == pg.K_SPACE:
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_SPACE:
                     for bird in birds:
                         bird.jump()
         #move bird and base
@@ -203,5 +197,31 @@ def main():
             bird.move()
         base.move()
 
-        draw_screen(screen, birds, pipes, base, score)
+        add_pipe = False
+        remove_pipes = []
+        for pipe in pipes:
+            for i, bird in enumerate(birds):
+                if pipe.collide(bird):
+                    birds.pop(i)
+                if not pipe.passed and bird.x > pipe.x:
+                    pipe.passed = True
+                    add_pipe = True
+            pipe.move()
+            if pipe.x + pipe.PIPE_TOP.get_width() < 0:
+                remove_pipes.append(pipe)
 
+        if add_pipe:
+            score += 1
+            pipes.append(Pipe(600))
+        for pipe in remove_pipes:
+            pipes.remove(pipe)
+        
+        for i, bird in enumerate(birds):
+            if (bird.y + bird.img.get_height()) > base.y or bird.y < 0:
+                birds.pop(i)
+
+
+        screen_draw(screen, birds, pipes, base, score)
+
+if __name__ == '__main__':
+    main()
