@@ -93,8 +93,49 @@ class Bird:
     def get_mask(self):
         pg.mask.from_surface(self.img)
 
-class Base:
-    pass
-
+    
 class Pipe:
+    DISTANCE = 200
+    SPEED = 5
+
+    def __init__(self, x):
+        self.x = x
+        self.height = 0
+        self.posTOP = 0
+        self.posBASE = 0
+        self.PIPE_TOP = pg.transform.flip(IMG_PIPE, False, True)
+        self.PIPE_BASE = IMG_PIPE
+        self.passed = False
+        self.set_height()
+
+    def set_height(self):
+        self.height = random.randrange(50, 450)
+        self.posTOP = self.height - self.PIPE_TOP.get_height()
+        self.posBASE = self.height + self.DISTANCE
+
+    def move(self):
+        self.x -= self.SPEED
+
+    def draw(self, screen):
+        screen.blit(self.PIPE_TOP, (self.x, self.posTOP))
+        screen.blit(self.PIPE_BASE, (self.x, self.posBASE))
+    
+    def collide(self, bird):
+        bird_mask = bird.get_mask()
+        top_mask = pg.mask.from_surface(self.PIPE_TOP)
+        base_mask = pg.mask.from_surface(self.PIPE_BASE)
+
+        distance_top = (self.x - bird.x, round(self.posTOP) - round(bird.y)
+        distance_base = (self.x - bird.x, round(self.posBASE) - round(bird.y)
+
+        point_top = bird_mask.overlap(top_mask, distance_base)
+        point_base = bird_mask.overlap(base_mask, distance_base)
+
+        if point_base or point_top:
+            return True
+        else:
+            return False
+
+
+class Base:
     pass
