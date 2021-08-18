@@ -180,8 +180,23 @@ def screen_draw(screen, birds, pipes, base, score):
     base.draw(screen)
     pygame.display.update()
 
-def main():
-    birds = [Bird(230, 350)]
+def main(genomes, config): #fitness function
+    global generation
+    generation += 1
+
+    if ai_playing:
+        networks = []
+        genome_list = []
+        birds = []
+        for _, genome in genomes:
+            network = neat.nn.FeedForwardNetwork.create(genome, config)
+            networks.append(network)
+            genome.fitness = 0
+            genome_list.append(genome)
+            birds.append(Bird(230, 350))
+    else:
+        birds = [Bird(230, 350)]
+
     base = Base(730)
     pipes = [Pipe(700)]
     screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
@@ -198,13 +213,29 @@ def main():
                 running = False
                 pygame.quit()
                 quit()
-            if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_SPACE:
-                    for bird in birds:
-                        bird.jump()
+            if not ai_playing:
+                if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_SPACE:
+                        for bird in birds:
+                            bird.jump()
+        index_pipe = 0
+        if len(birds) > 0:
+            if len(pipes) > 1 and birds[0].x > (pipes[0].x + pipes[0].PIPE_TOP.get_width()):
+                index_pipe = 1
+        else:
+            running = False
+            break
         #move bird and base
-        for bird in birds:
+        for i, bird in enumerate(birds):
             bird.move()
+            #increase fitness a little bit
+            genome_list[i] += 0.1
+            output = networks[i].activate((bird.y, 
+                                            abs(bird.y - pipes[index_pipe].height), 
+                                            abs(bird.y - pipes[index_pipe].posBASE)))
+            #-1 and 1 -> if output is > 0.5, so bird jump
+            if output[0] > 0.5:
+                bird.jump()
         base.move()
 
         add_pipe = False
@@ -213,6 +244,10 @@ def main():
             for i, bird in enumerate(birds):
                 if pipe.collide(bird):
                     birds.pop(i)
+                    if ai_playing:
+                        genome_list[i].fitness -+ 1
+                        genome_list.pop(i)
+                        networks.pop(i)
                 if not pipe.passed and bird.x > pipe.x:
                     pipe.passed = True
                     add_pipe = True
@@ -223,13 +258,18 @@ def main():
         if add_pipe:
             score += 1
             pipes.append(Pipe(600))
+            for genome in genome_list:
+                genome.fitness += 5
+
         for pipe in remove_pipes:
             pipes.remove(pipe)
-        
+
         for i, bird in enumerate(birds):
             if (bird.y + bird.img.get_height()) > base.y or bird.y < 0:
-                birds.pop(i)
-
+                birds.pop(i)    
+                if ai_playing:
+                    genome_list.pop(i)
+                    networks.pop(i)
 
         screen_draw(screen, birds, pipes, base, score)
 
