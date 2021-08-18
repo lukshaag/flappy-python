@@ -138,4 +138,27 @@ class Pipe:
 
 
 class Base:
-    pass
+    SPEED = 5
+    WIDHT = IMG_BASE.get_width()
+    IMG = IMG_BASE
+
+    def __init__(self, y):
+        self.y = y
+        self.x1 = 0
+        self.x2 = self.WIDTH
+
+    def move(self):
+        self.x1 -= self.SPEED
+        self.x2 -= self.SPEED
+        if self.x1 + self.WIDTH < 0:
+            self.x1 = self.x1 + self.WIDTH
+        if self.x2 + self.WIDTH <0:
+            self.x2 = self.x2 + self.WIDTH
+
+    def draw(self, screen):
+        screen.blit(self.IMG, (self.x1, self.y))
+        screen.blit(self.IMG, (self.x2, self.y))
+
+
+
+
