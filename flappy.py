@@ -1,297 +1,299 @@
-from neat import population
 import pygame
 import os
 import random
 import neat
 
+ai_jogando = True
+geracao = 0
 
-ai_playing = True
-generation = 0
+TELA_LARGURA = 500
+TELA_ALTURA = 800
 
-#WINDOW AND ASSETS CONFIG
-SCREEN_HEIGHT = 800
-SCREEN_WIDTH = 500
-
-IMG_PIPE = pygame.transform.scale2x(pygame.image.load(r'D:\CURSOS\PYTHON\PYTHON GAMES\FLAPPY BIRD\imgs\pipe.png'))
-IMG_BASE = pygame.transform.scale2x(pygame.image.load(r'D:\CURSOS\PYTHON\PYTHON GAMES\FLAPPY BIRD\imgs\base.png'))
-IMG_BG = pygame.transform.scale2x(pygame.image.load(r'D:\CURSOS\PYTHON\PYTHON GAMES\FLAPPY BIRD\imgs\bg.png'))
-IMG_BIRD = [
+IMAGEM_CANO = pygame.transform.scale2x(pygame.image.load(r'D:\CURSOS\PYTHON\PYTHON GAMES\FLAPPY BIRD\imgs\pipe.png'))
+IMAGEM_CHAO = pygame.transform.scale2x(pygame.image.load(r'D:\CURSOS\PYTHON\PYTHON GAMES\FLAPPY BIRD\imgs\base.png'))
+IMAGEM_BACKGROUND = pygame.transform.scale2x(pygame.image.load(r'D:\CURSOS\PYTHON\PYTHON GAMES\FLAPPY BIRD\imgs\bg.png'))
+IMAGENS_PASSARO = [
     pygame.transform.scale2x(pygame.image.load(r'D:\CURSOS\PYTHON\PYTHON GAMES\FLAPPY BIRD\imgs\bird1.png')),
     pygame.transform.scale2x(pygame.image.load(r'D:\CURSOS\PYTHON\PYTHON GAMES\FLAPPY BIRD\imgs\bird2.png')),
     pygame.transform.scale2x(pygame.image.load(r'D:\CURSOS\PYTHON\PYTHON GAMES\FLAPPY BIRD\imgs\bird3.png'))
 ]
 
 pygame.font.init()
-SCORE_FONT = pygame.font.SysFont('Arial', 50)
+FONTE_PONTOS = pygame.font.SysFont('arial', 50)
 
-#GAME LOGIC
-class Bird:
-    IMGS = IMG_BIRD
-    #rotate animation
-    MAX_ROTATION = 25
-    SPEED_ROTATION = 20
-    ANIMATION_TIME = 5
+
+class Passaro:
+    IMGS = IMAGENS_PASSARO
+    # animações da rotação
+    ROTACAO_MAXIMA = 25
+    VELOCIDADE_ROTACAO = 20
+    TEMPO_ANIMACAO = 5
 
     def __init__(self, x, y):
         self.x = x
         self.y = y
-        self.angle = 0
-        self.speed = 0
-        self.height = self.y
-        self.time = 0
-        self.img_count = 0
-        self.img = self.IMGS[0]
+        self.angulo = 0
+        self.velocidade = 0
+        self.altura = self.y
+        self.tempo = 0
+        self.contagem_imagem = 0
+        self.imagem = self.IMGS[0]
 
-    def jump(self):
-        self.speed = -10.5
-        self.time = 0
-        self.height = self.y
+    def pular(self):
+        self.velocidade = -10.5
+        self.tempo = 0
+        self.altura = self.y
 
-    def move(self):
-        #calculate displacement
-        self.time += 1
-        displacemnt = 1.5 * (self.time**2) + self.speed * self.time
-        #restrinct desplacement
-        if displacemnt > 16:
-            displacemnt = 16
-        elif displacemnt < 0:
-            displacemnt -= 2
-        
-        self.y += displacemnt
+    def mover(self):
+        # calcular o deslocamento
+        self.tempo += 1
+        deslocamento = 1.5 * (self.tempo**2) + self.velocidade * self.tempo
 
-        #bird angle
-        if displacemnt < 0 or self.y < (self.height + 50):
-            if self.angle < self.MAX_ROTATION:
-                self.angle = self.MAX_ROTATION
+        # restringir o deslocamento
+        if deslocamento > 16:
+            deslocamento = 16
+        elif deslocamento < 0:
+            deslocamento -= 2
+
+        self.y += deslocamento
+
+        # o angulo do passaro
+        if deslocamento < 0 or self.y < (self.altura + 50):
+            if self.angulo < self.ROTACAO_MAXIMA:
+                self.angulo = self.ROTACAO_MAXIMA
         else:
-            if self.angle > -90:
-                self.angle -= self.SPEED_ROTATION
+            if self.angulo > -90:
+                self.angulo -= self.VELOCIDADE_ROTACAO
 
-    def draw(self, screen):
-        #define which sprite will use
-        self.img_count += 1
+    def desenhar(self, tela):
+        # definir qual imagem do passaro vai usar
+        self.contagem_imagem += 1
 
-        if self.img_count < self.ANIMATION_TIME:
-            self.img = self.IMGS[0]
-        elif self.img_count < self.ANIMATION_TIME*2:
-            self.img = self.IMGS[1]
-        elif self.img_count < self.ANIMATION_TIME*3:
-            self.img = self.IMGS[2]
-        elif self.img_count < self.ANIMATION_TIME*4:
-            self.img = self.IMGS[1]
-        elif self.img_count >= self.ANIMATION_TIME*4 + 1:
-            self.img = self.IMGS[0]
-            self.img_count = 0
+        if self.contagem_imagem < self.TEMPO_ANIMACAO:
+            self.imagem = self.IMGS[0]
+        elif self.contagem_imagem < self.TEMPO_ANIMACAO*2:
+            self.imagem = self.IMGS[1]
+        elif self.contagem_imagem < self.TEMPO_ANIMACAO*3:
+            self.imagem = self.IMGS[2]
+        elif self.contagem_imagem < self.TEMPO_ANIMACAO*4:
+            self.imagem = self.IMGS[1]
+        elif self.contagem_imagem >= self.TEMPO_ANIMACAO*4 + 1:
+            self.imagem = self.IMGS[0]
+            self.contagem_imagem = 0
 
-        #if the bird is falling I won't flap
 
-        if self.angle <= -80:
-            self.img = self.IMGS[1]
-            self.img_count = self.ANIMATION_TIME*2
+        # se o passaro tiver caindo eu não vou bater asa
+        if self.angulo <= -80:
+            self.imagem = self.IMGS[1]
+            self.contagem_imagem = self.TEMPO_ANIMACAO*2
 
-        #draw img
-        img_rotated = pygame.transform.rotate(self.img, self.angle)
-        pos_img_center = self.img.get_rect(topleft=(self.x, self.y)).center
-        rect = img_rotated.get_rect(center=pos_img_center)
-        screen.blit(img_rotated, rect.topleft)
+        # desenhar a imagem
+        imagem_rotacionada = pygame.transform.rotate(self.imagem, self.angulo)
+        pos_centro_imagem = self.imagem.get_rect(topleft=(self.x, self.y)).center
+        retangulo = imagem_rotacionada.get_rect(center=pos_centro_imagem)
+        tela.blit(imagem_rotacionada, retangulo.topleft)
 
     def get_mask(self):
-        return pygame.mask.from_surface(self.img)
+        return pygame.mask.from_surface(self.imagem)
 
-    
-class Pipe:
-    DISTANCE = 200
-    SPEED = 5
+
+class Cano:
+    DISTANCIA = 200
+    VELOCIDADE = 5
 
     def __init__(self, x):
         self.x = x
-        self.height = 0
-        self.posTOP = 0
-        self.posBASE = 0
-        self.PIPE_TOP = pygame.transform.flip(IMG_PIPE, False, True)
-        self.PIPE_BASE = IMG_PIPE
-        self.passed = False
-        self.set_height()
+        self.altura = 0
+        self.pos_topo = 0
+        self.pos_base = 0
+        self.CANO_TOPO = pygame.transform.flip(IMAGEM_CANO, False, True)
+        self.CANO_BASE = IMAGEM_CANO
+        self.passou = False
+        self.definir_altura()
 
-    def set_height(self):
-        self.height = random.randrange(50, 450)
-        self.posTOP = self.height - self.PIPE_TOP.get_height()
-        self.posBASE = self.height + self.DISTANCE
+    def definir_altura(self):
+        self.altura = random.randrange(50, 450)
+        self.pos_topo = self.altura - self.CANO_TOPO.get_height()
+        self.pos_base = self.altura + self.DISTANCIA
 
-    def move(self):
-        self.x -= self.SPEED
+    def mover(self):
+        self.x -= self.VELOCIDADE
 
-    def draw(self, screen):
-        screen.blit(self.PIPE_TOP, (self.x, self.posTOP))
-        screen.blit(self.PIPE_BASE, (self.x, self.posBASE))
-    
-    def collide(self, bird):
-        bird_mask = bird.get_mask()
-        top_mask = pygame.mask.from_surface(self.PIPE_TOP)
-        base_mask = pygame.mask.from_surface(self.PIPE_BASE)
+    def desenhar(self, tela):
+        tela.blit(self.CANO_TOPO, (self.x, self.pos_topo))
+        tela.blit(self.CANO_BASE, (self.x, self.pos_base))
 
-        distance_top = (self.x - bird.x, round(self.posTOP) - round(bird.y))
-        distance_base = (self.x - bird.x, round(self.posBASE) - round(bird.y))
+    def colidir(self, passaro):
+        passaro_mask = passaro.get_mask()
+        topo_mask = pygame.mask.from_surface(self.CANO_TOPO)
+        base_mask = pygame.mask.from_surface(self.CANO_BASE)
 
-        point_top = bird_mask.overlap(top_mask, distance_base)
-        point_base = bird_mask.overlap(base_mask, distance_base)
+        distancia_topo = (self.x - passaro.x, self.pos_topo - round(passaro.y))
+        distancia_base = (self.x - passaro.x, self.pos_base - round(passaro.y))
 
-        if point_base or point_top:
+        topo_ponto = passaro_mask.overlap(topo_mask, distancia_topo)
+        base_ponto = passaro_mask.overlap(base_mask, distancia_base)
+
+        if base_ponto or topo_ponto:
             return True
         else:
             return False
 
 
-class Base:
-    SPEED = 5
-    WIDTH = IMG_BASE.get_width()
-    IMG = IMG_BASE
+class Chao:
+    VELOCIDADE = 5
+    LARGURA = IMAGEM_CHAO.get_width()
+    IMAGEM = IMAGEM_CHAO
 
     def __init__(self, y):
         self.y = y
         self.x1 = 0
-        self.x2 = self.WIDTH
+        self.x2 = self.LARGURA
 
-    def move(self):
-        self.x1 -= self.SPEED
-        self.x2 -= self.SPEED
-        if self.x1 + self.WIDTH < 0:
-            self.x1 = self.x2 + self.WIDTH
-        if self.x2 + self.WIDTH <0:
-            self.x2 = self.x1  + self.WIDTH
+    def mover(self):
+        self.x1 -= self.VELOCIDADE
+        self.x2 -= self.VELOCIDADE
 
-    def draw(self, screen):
-        screen.blit(self.IMG, (self.x1, self.y))
-        screen.blit(self.IMG, (self.x2, self.y))
+        if self.x1 + self.LARGURA < 0:
+            self.x1 = self.x2 + self.LARGURA
+        if self.x2 + self.LARGURA < 0:
+            self.x2 = self.x1 + self.LARGURA
 
-def screen_draw(screen, birds, pipes, base, score):
-    screen.blit(IMG_BG, (0, 0))
-    for bird in birds:
-        bird.draw(screen)
-    for pipe in pipes:
-        pipe.draw(screen)
+    def desenhar(self, tela):
+        tela.blit(self.IMAGEM, (self.x1, self.y))
+        tela.blit(self.IMAGEM, (self.x2, self.y))
 
-    text = SCORE_FONT.render(f'SCORE: {score}', 1, (255, 255, 255))
-    screen.blit(text, (SCREEN_WIDTH - 10 - text.get_width(), 10))
 
-    if ai_playing:
-        text = SCORE_FONT.render(f'GEN: {generation}', 1, (255, 255, 255))
-        screen.blit(text, (10, 10))
+def desenhar_tela(tela, passaros, canos, chao, pontos):
+    tela.blit(IMAGEM_BACKGROUND, (0, 0))
+    for passaro in passaros:
+        passaro.desenhar(tela)
+    for cano in canos:
+        cano.desenhar(tela)
 
-    base.draw(screen)
+    texto = FONTE_PONTOS.render(f"Pontuação: {pontos}", 1, (255, 255, 255))
+    tela.blit(texto, (TELA_LARGURA - 10 - texto.get_width(), 10))
+
+    if ai_jogando:
+        texto = FONTE_PONTOS.render(f"Geração: {geracao}", 1, (255, 255, 255))
+        tela.blit(texto, (10, 10))
+
+    chao.desenhar(tela)
     pygame.display.update()
 
-def main(genomes, config): #fitness function
-    global generation
-    generation += 1
 
-    if ai_playing:
-        networks = []
-        genome_list = []
-        birds = []
-        for _, genome in genomes:
-            network = neat.nn.FeedForwardNetwork.create(genome, config)
-            networks.append(network)
-            genome.fitness = 0
-            genome_list.append(genome)
-            birds.append(Bird(230, 350))
+def main(genomas, config): # fitness function
+    global geracao
+    geracao += 1
+
+    if ai_jogando:
+        redes = []
+        lista_genomas = []
+        passaros = []
+        for _, genoma in genomas:
+            rede = neat.nn.FeedForwardNetwork.create(genoma, config)
+            redes.append(rede)
+            genoma.fitness = 0
+            lista_genomas.append(genoma)
+            passaros.append(Passaro(230, 350))
     else:
-        birds = [Bird(230, 350)]
+        passaros = [Passaro(230, 350)]
+    chao = Chao(730)
+    canos = [Cano(700)]
+    tela = pygame.display.set_mode((TELA_LARGURA, TELA_ALTURA))
+    pontos = 0
+    relogio = pygame.time.Clock()
 
-    base = Base(730)
-    pipes = [Pipe(700)]
-    screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
-    score = 0
-    timer = pygame.time.Clock()
+    rodando = True
+    while rodando:
+        relogio.tick(30)
 
-    running = True
-    while running:
-        timer.tick(30)
-
-        #user interact
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                running = False
+        # interação com o usuário
+        for evento in pygame.event.get():
+            if evento.type == pygame.QUIT:
+                rodando = False
                 pygame.quit()
                 quit()
-            if not ai_playing:
-                if event.type == pygame.KEYDOWN:
-                    if event.key == pygame.K_SPACE:
-                        for bird in birds:
-                            bird.jump()
-        index_pipe = 0
-        if len(birds) > 0:
-            if len(pipes) > 1 and birds[0].x > (pipes[0].x + pipes[0].PIPE_TOP.get_width()):
-                index_pipe = 1
+            if not ai_jogando:
+                if evento.type == pygame.KEYDOWN:
+                    if evento.key == pygame.K_SPACE:
+                        for passaro in passaros:
+                            passaro.pular()
+
+        indice_cano = 0
+        if len(passaros) > 0:
+            if len(canos) > 1 and passaros[0].x > (canos[0].x + canos[0].CANO_TOPO.get_width()):
+                indice_cano = 1
         else:
-            running = False
+            rodando = False
             break
-        #move bird and base
-        for i, bird in enumerate(birds):
-            bird.move()
-            #increase fitness a little bit
-            genome_list[i] += 0.1
-            output = networks[i].activate((bird.y, 
-                                            abs(bird.y - pipes[index_pipe].height), 
-                                            abs(bird.y - pipes[index_pipe].posBASE)))
-            #-1 and 1 -> if output is > 0.5, so bird jump
+
+        # mover as coisas
+        for i, passaro in enumerate(passaros):
+            passaro.mover()
+            # aumentar um pouquinho a fitness do passaro
+            lista_genomas[i].fitness += 0.1
+            output = redes[i].activate((passaro.y,
+                                        abs(passaro.y - canos[indice_cano].altura),
+                                        abs(passaro.y - canos[indice_cano].pos_base)))
+            # -1 e 1 -> se o output for > 0.5 então o passaro pula
             if output[0] > 0.5:
-                bird.jump()
-        base.move()
+                passaro.pular()
+        chao.mover()
 
-        add_pipe = False
-        remove_pipes = []
-        for pipe in pipes:
-            for i, bird in enumerate(birds):
-                if pipe.collide(bird):
-                    birds.pop(i)
-                    if ai_playing:
-                        genome_list[i].fitness -+ 1
-                        genome_list.pop(i)
-                        networks.pop(i)
-                if not pipe.passed and bird.x > pipe.x:
-                    pipe.passed = True
-                    add_pipe = True
-            pipe.move()
-            if pipe.x + pipe.PIPE_TOP.get_width() < 0:
-                remove_pipes.append(pipe)
+        adicionar_cano = False
+        remover_canos = []
+        for cano in canos:
+            for i, passaro in enumerate(passaros):
+                if cano.colidir(passaro):
+                    passaros.pop(i)
+                    if ai_jogando:
+                        lista_genomas[i].fitness -= 1
+                        lista_genomas.pop(i)
+                        redes.pop(i)
+                if not cano.passou and passaro.x > cano.x:
+                    cano.passou = True
+                    adicionar_cano = True
+            cano.mover()
+            if cano.x + cano.CANO_TOPO.get_width() < 0:
+                remover_canos.append(cano)
 
-        if add_pipe:
-            score += 1
-            pipes.append(Pipe(600))
-            for genome in genome_list:
-                genome.fitness += 5
+        if adicionar_cano:
+            pontos += 1
+            canos.append(Cano(600))
+            for genoma in lista_genomas:
+                genoma.fitness += 5
+        for cano in remover_canos:
+            canos.remove(cano)
 
-        for pipe in remove_pipes:
-            pipes.remove(pipe)
+        for i, passaro in enumerate(passaros):
+            if (passaro.y + passaro.imagem.get_height()) > chao.y or passaro.y < 0:
+                passaros.pop(i)
+                if ai_jogando:
+                    lista_genomas.pop(i)
+                    redes.pop(i)
 
-        for i, bird in enumerate(birds):
-            if (bird.y + bird.img.get_height()) > base.y or bird.y < 0:
-                birds.pop(i)    
-                if ai_playing:
-                    genome_list.pop(i)
-                    networks.pop(i)
+        desenhar_tela(tela, passaros, canos, chao, pontos)
 
-        screen_draw(screen, birds, pipes, base, score)
 
-def run(path_config):
+def rodar(caminho_config):
     config = neat.config.Config(neat.DefaultGenome,
                                 neat.DefaultReproduction,
                                 neat.DefaultSpeciesSet,
                                 neat.DefaultStagnation,
-                                path_config)
-    
-    population = neat.Population(config)
-    population.add_reporter(neat.StdOutReporter(True))
-    population.add_reporter(neat.StatisticsReporter())
+                                caminho_config)
 
+    populacao = neat.Population(config)
+    populacao.add_reporter(neat.StdOutReporter(True))
+    populacao.add_reporter(neat.StatisticsReporter())
 
-    if ai_playing:
-        population.run(main, 100)
+    if ai_jogando:
+        populacao.run(main, 50)
     else:
         main(None, None)
 
+
 if __name__ == '__main__':
-    path = os.path.dirname(__file__)
-    path_config = os.path.join(path, 'config.txt')
-    run(path_config)
+    caminho = os.path.dirname(__file__)
+    caminho_config = os.path.join(caminho, 'config.txt')
+    rodar(caminho_config)
