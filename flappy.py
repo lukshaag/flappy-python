@@ -2,6 +2,11 @@ import pygame as pg
 import os
 import random
 
+from pygame import display
+from pygame import event
+from pygame.constants import KEYDOWN, K_SPACE, QUIT
+from pygame.time import Clock
+
 
 #WINDOW AND ASSETS CONFIG
 SCREEN_HEIGHT = 800
@@ -159,6 +164,41 @@ class Base:
         screen.blit(self.IMG, (self.x1, self.y))
         screen.blit(self.IMG, (self.x2, self.y))
 
+def screen_draw(screen, birds, pipes, base, score):
+    screen.blit(IMG_BG, (0, 0))
+    for bird in birds:
+        bird.draw(screen)
+    for pipe in pipes:
+        pipe.draw(screen)
 
+    text = SCORE_FONT.render(f"SCORE: {score}", 1, (255, 255, 255))
+    screen.blit(text, (SCREEN_WIDTH - 10 - text.get_width(), 10))
+    base.draw(screen)
+    pg.display.update()
 
+def main():
+    birds = [Bird(230, 350)]
+    base = Base(730)
+    pipes = [Pipe(700)]
+    screen = pg.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+    score = 0
+    timer = pg.time.Clock()
+
+    running = True
+    while running:
+        timer.tick(30)
+        
+        for event in pg.event.get():
+            if event.type == pg.QUIT:
+                running = False
+                pg.quit()
+                quit()
+            if event.type == pg.KEYDOWN:
+                if event.key == pg.K_SPACE:
+                    for bird in birds:
+                        bird.jump()
+        
+        
+
+        draw_screen(screen, birds, pipes, base, score)
 
